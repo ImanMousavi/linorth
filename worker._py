@@ -1,0 +1,46 @@
+import asyncio
+from web3 import Web3
+
+w3 = Web3(
+    Web3.HTTPProvider(
+        "https://eth.getblock.io/1c2d76c5-4c8e-4a5e-854a-8c93fa232b95/mainnet/"
+    )
+)
+
+
+async def fetch_block(block_number):
+    address = "0xFf00000000000000000000000000000000008453"
+
+    block = w3.eth.get_block(block_number, full_transactions=True)
+    for tx in list(block["transactions"]):
+        if tx is None:
+            continue
+        tx_id = tx["hash"]
+        to_address = tx["to"]
+        if to_address != address:
+            continue
+        value = tx["value"] / 10**18
+        print(tx_id)
+        print(value)
+
+
+async def main(start):
+    latest = w3.eth.block_number
+    if start == 0:
+        start = latest - 1
+    while True:
+        current_block = w3.eth.block_number
+        if start > current_block:
+            await asyncio.sleep(2)
+            print("waiting for new block, Sleep 2 seconds")
+        else:
+            await fetch_block(start)
+            print("fetch block: {}".format(start))
+            print("Sleep 5 seconds")
+            await asyncio.sleep(5)
+            start += 1
+
+
+# Start the program
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main(18179533))
